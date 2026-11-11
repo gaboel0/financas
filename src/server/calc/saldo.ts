@@ -1,6 +1,6 @@
 import "server-only";
-import { get } from "../db";
-import { BUCKET_SQL } from "../pluggy/categoryMap";
+import { all, get } from "../db";
+import { BUCKET_SQL, CATEGORY_SQL } from "../pluggy/categoryMap";
 import { incomeOf } from "../repo/incomes";
 import { getSettings } from "../repo/settings";
 import { monthRange } from "@/lib/month";
@@ -20,10 +20,14 @@ export type SaldoPrevisto = {
   saldo: number;
   pctLivre: number; // 0..1 (pode ser negativo)
   segments: Segment[];
-  casaItems: { name: string; value: number }[];
-  pessoaisItems: { name: string; value: number }[];
+  casaItems: BillItem[];
+  pessoaisItems: BillItem[];
   dividasItems: { name: string; value: number }[];
+  /** gastos do dia a dia no mês, maiores primeiro */
+  diaItems: { id: string; date: string; description: string; amount: number; category: string; account: string | null }[];
 };
+
+export type BillItem = { name: string; value: number; due_date: string; paid: boolean };
 
 /** Soma (em centavos, positiva) das saídas de dia a dia da pessoa no mês. */
 export function diaADiaReal(month: string, personId: number): number {
@@ -38,13 +42,26 @@ export function diaADiaReal(month: string, personId: number): number {
   );
 }
 
+function diaADiaItems(month: string, personId: number): SaldoPrevisto["diaItems"] {
+  const { from, to } = monthRange(month);
+  return all<SaldoPrevisto["diaItems"][number]>(
+    `SELECT t.id, t.date, t.description, -t.amount AS amount, ${CATEGORY_SQL} AS category, a.name AS account
+     FROM transactions t LEFT JOIN accounts a ON a.id = t.account_id
+     WHERE t.date BETWEEN ? AND ? AND t.amount < 0 AND t.person_id = ?
+       AND t.bill_instance_id IS NULL AND ${BUCKET_SQL} = 'dia_a_dia'
+     ORDER BY t.amount ASC, t.date DESC`,
+    from, to, personId,
+  );
+}
+
 export function getSaldoPrevisto(month: string, meId: number): SaldoPrevisto {
   const st = getSettings();
   const salario = incomeOf(meId, month);
   const instances = listInstances(month);
 
-  const casaItems = instances.filter((i) => i.scope === "house").map((i) => ({ name: i.name, value: i.amount }));
-  const pessoaisItems = instances.filter((i) => i.scope === "personal").map((i) => ({ name: i.name, value: i.amount }));
+  const item = (i: (typeof instances)[number]): BillItem => ({ name: i.name, value: i.amount, due_date: i.due_date, paid: i.paid === 1 });
+  const casaItems = instances.filter((i) => i.scope === "house").map(item);
+  const pessoaisItems = instances.filter((i) => i.scope === "personal").map(item);
 
   const casa = casaItems.reduce((s, i) => s + i.value, 0);
   const pessoais = pessoaisItems.reduce((s, i) => s + i.value, 0);
@@ -66,5 +83,6 @@ export function getSaldoPrevisto(month: string, meId: number): SaldoPrevisto {
   return {
     salario, casa, pessoais, dividas, dividasItems, diaADia, diaADiaReal: real, diaADiaBudget: st.diaADiaBudget,
     saldo, pctLivre: salario > 0 ? saldo / salario : 0, segments, casaItems, pessoaisItems,
+    diaItems: diaADiaItems(month, meId),
   };
 }

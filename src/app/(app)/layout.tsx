@@ -13,10 +13,12 @@ import { AddMenu } from "@/components/AddMenu";
 import { getSettings } from "@/server/repo/settings";
 import { getViewers } from "@/server/repo/people";
 import { listAccounts } from "@/server/repo/accounts";
+import { kickUpdateCheck } from "@/server/pluggy/scheduler";
 
 export const dynamic = "force-dynamic";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  kickUpdateCheck(); // em segundo plano: não segura a página
   const jar = await cookies();
   const sidebarOpen = jar.get("sidebar")?.value !== "closed";
   const privacyOn = jar.get("privacy")?.value === "on";

@@ -17,7 +17,32 @@ export type SyncResult = {
   needsReconnect: string[];
 };
 
-type G = typeof globalThis & { __fcSyncRunning?: boolean };
+type G = typeof globalThis & { __fcSyncRunning?: boolean; __fcSeen?: Map<string, string> };
+
+/** Última atualização da Pluggy que já puxamos, por item (em memória; o sync do startup preenche). */
+const seen = () => ((globalThis as G).__fcSeen ??= new Map());
+const stamp = (d: Date | string | null | undefined) => (d ? new Date(d).toISOString() : "");
+
+/**
+ * Checagem leve: pergunta à Pluggy só a data de atualização de cada conexão (1 chamada por item)
+ * e roda o sync completo apenas se alguma mudou desde o último sync. Retorna null se nada mudou.
+ */
+export async function syncIfChanged(): Promise<SyncResult | null> {
+  if (!hasCredentials() || (globalThis as G).__fcSyncRunning) return null;
+  const client = getPluggyClient();
+  const ids = all<{ id: string }>("SELECT id FROM pluggy_items").map((r) => r.id);
+  const changed = (
+    await Promise.all(ids.map(async (id) => {
+      try {
+        const it = await client.fetchItem(id);
+        return seen().get(id) !== stamp(it.lastUpdatedAt);
+      } catch {
+        return false;
+      }
+    }))
+  ).some(Boolean);
+  return changed ? syncAll() : null;
+}
 
 const cents = (n: number | null | undefined) => Math.round((n ?? 0) * 100);
 const isoDate = (d: Date | string | null | undefined) => (d ? new Date(d).toISOString().slice(0, 10) : null);
@@ -124,6 +149,7 @@ async function syncItem(
 ): Promise<number> {
   const item = await client.fetchItem(itemId);
   saveItem(item.id, item.connector?.name ?? null, item.status, item.executionStatus, isoDate(item.lastUpdatedAt));
+  seen().set(item.id, stamp(item.lastUpdatedAt));
   if (item.status === "LOGIN_ERROR" || item.status === "WAITING_USER_INPUT" || item.status === "WAITING_USER_ACTION") {
     result.needsReconnect.push(item.connector?.name ?? itemId);
     return 0;

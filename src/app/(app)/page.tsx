@@ -1,5 +1,5 @@
 import { pageCtx, type SearchParams } from "@/server/ctx";
-import { getSaldoPrevisto } from "@/server/calc/saldo";
+import { getGastoAteAgora } from "@/server/calc/gastos";
 import { getContasAPagar } from "@/server/calc/contas";
 import { getCartoes } from "@/server/calc/cartoes";
 import { getMoradia } from "@/server/calc/moradia";
@@ -10,13 +10,15 @@ import { listDebts } from "@/server/repo/debts";
 import { Dividas } from "@/components/cards/Dividas";
 import { formatDateBR } from "@/lib/format";
 import { monthLabel, todayISO } from "@/lib/month";
-import { SaldoPrevisto } from "@/components/cards/SaldoPrevisto";
+import { GastoAteAgora } from "@/components/cards/GastoAteAgora";
 import { ContasAPagar } from "@/components/cards/ContasAPagar";
 import { GastosCategoria } from "@/components/cards/GastosCategoria";
 import { Cartoes } from "@/components/cards/Cartoes";
 import { Moradia } from "@/components/cards/Moradia";
 import { Emprestimos } from "@/components/cards/Emprestimos";
 import { listEmprestimos } from "@/server/calc/emprestimos";
+import { Calendario } from "@/components/cards/Calendario";
+import { getCalendar } from "@/server/repo/calendar";
 import { CartoesGeral, MoradiaGeral, RecorrenciasGeral, ResumoGeral } from "@/components/cards/Geral";
 
 export default async function VisaoGeral({ searchParams }: { searchParams: SearchParams }) {
@@ -57,7 +59,8 @@ export default async function VisaoGeral({ searchParams }: { searchParams: Searc
   return (
     <div className="grid gap-6 lg:grid-cols-3">
       {header}
-      <SaldoPrevisto data={getSaldoPrevisto(month, me.id)} month={month} />
+      <GastoAteAgora data={getGastoAteAgora(month, me.id)} month={month} />
+      <Calendario data={getCalendar(month)} today={todayISO()} />
       <Transacoes txs={listTransactions({ month, limit: 40 })} totals={txTotals({ month }, true)} month={month} />
       <GastosCategoria data={categoryTotals(month)} month={month} />
       <Cartoes data={getCartoes(month)} month={month} />

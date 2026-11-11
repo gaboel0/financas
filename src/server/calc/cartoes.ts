@@ -83,14 +83,30 @@ function buildCard(a: Account, month: string): CardView {
   const dueDay = a.due_day ?? (lastBill?.due_date ? Number(lastBill.due_date.slice(8, 10)) : null);
 
   const ref = (d: string) => refMonthOf(d, closeDay);
+
+  // Parcelamento de fatura feito no banco: a fatura do 1º mês vira a 1ª parcela e as próximas somam nas seguintes.
+  // As linhas de parcelamento que o banco lançar depois são ignoradas para não contar em dobro.
+  const plans = all<{ description: string; installment: number; total: number; first_ref: string }>(
+    "SELECT description, installment, total, first_ref FROM card_plans WHERE account_id = ?", a.id,
+  );
+  const PLAN_TX = /parc(?:\.|elamento)?\s*(?:de\s*)?(?:saldo\s*(?:de\s*)?)?fatura/i;
+  const planK = (p: (typeof plans)[number], m: string) => monthDiff(p.first_ref, m);
+  const planAmount = (m: string) => plans.reduce((s, p) => {
+    const k = planK(p, m);
+    return k >= 0 && k < p.total ? s + p.installment : s;
+  }, 0);
+  const replacedBy = (m: string) => plans.some((p) => p.first_ref === m);
+  const usedTxs = plans.length ? txs.filter((t) => !PLAN_TX.test(t.description)) : txs;
   /** Pagamento da fatura (crédito classificado como "ignorar"): não é compra. */
   const isPayment = (t: CardTx) => t.amount > 0 && t.bucket === "ignorar";
+  /** Linha "TOTAL DA FATURA ANTERIOR" (Caixa): só repete o saldo da fatura passada, não é compra. */
+  const isCarryover = (t: CardTx) => /^total da fatura anterior/i.test(t.description);
   /** O que foi lançado na fatura do mês m: compras (inclusive as que o orçamento ignora) menos estornos, sem os pagamentos. */
-  const posted = (m: string) => -txs.filter((t) => ref(t.date) === m && !isPayment(t)).reduce((s, t) => s + t.amount, 0);
+  const posted = (m: string) => -usedTxs.filter((t) => ref(t.date) === m && !isPayment(t) && !isCarryover(t)).reduce((s, t) => s + t.amount, 0);
 
   // parcelamentos: última parcela vista de cada compra
   const series = new Map<string, CardTx>();
-  for (const t of txs) {
+  for (const t of usedTxs) {
     if (!t.total_installments || t.total_installments < 2 || !t.installment_number) continue;
     const key = `${stripInstallment(t.description).toLowerCase()}|${t.total_installments}`;
     const cur = series.get(key);
@@ -104,7 +120,13 @@ function buildCard(a: Account, month: string): CardView {
       valor: t.total_amount ? Math.round(t.total_amount / t.total_installments!) : Math.abs(t.amount),
       restantes: t.total_installments! - t.installment_number!,
     }))
-    .filter((p) => p.restantes > 0);
+    .filter((p) => p.restantes > 0)
+    .concat(plans.flatMap((p) => {
+      const k = planK(p, month);
+      return k >= 0 && k < p.total
+        ? [{ description: p.description, number: k + 1, total: p.total, valor: p.installment, restantes: p.total - k - 1 }]
+        : [];
+    }));
 
   /** Parcelas que devem cair na fatura do mês m e ainda não apareceram (só a parcela do mês, nunca o total da compra). */
   const pendingInstallments = (m: string) => {
@@ -120,12 +142,14 @@ function buildCard(a: Account, month: string): CardView {
   };
 
   /** Valor da fatura do mês: o que já foi lançado + parcelas que ainda vão cair nela. */
-  const invoice = (m: string) => Math.max(0, posted(m) + pendingInstallments(m));
+  const invoice = (m: string) =>
+    replacedBy(m) ? planAmount(m) : Math.max(0, posted(m) + pendingInstallments(m)) + planAmount(m);
 
   // fatura anterior paga só em parte (ex.: só o mínimo): o resto rola para esta, com juros
   let carryOver = 0;
   const prevBill = bills.find((b) => b.due_date && b.close_date && dueMonthOf(addMonths(month, -1), closeDay, dueDay) === b.due_date.slice(0, 7));
-  if (prevBill && prevBill.total_amount > 0) {
+  const planActive = plans.some((p) => planK(p, month) >= 0 && planK(p, month) < p.total);
+  if (prevBill && prevBill.total_amount > 0 && !planActive) {
     const paidAfter = txs.filter((t) => isPayment(t) && t.date > prevBill.close_date!).reduce((s, t) => s + t.amount, 0);
     if (paidAfter < prevBill.total_amount * 0.5) carryOver = prevBill.total_amount - paidAfter;
   }

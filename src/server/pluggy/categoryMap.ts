@@ -60,7 +60,7 @@ const RULE = (col: "bucket" | "category") =>
  * Ordem: escolha manual > transferência entre contas próprias > regra por texto > categoria do banco.
  */
 export const BUCKET_SQL =
-  `COALESCE(t.bucket_override, CASE WHEN t.transfer_pair IS NOT NULL THEN 'ignorar' END, ${RULE("bucket")}, (SELECT cm.bucket FROM category_map cm WHERE cm.pluggy_category_id = t.pluggy_category_id), 'dia_a_dia')`;
+  `COALESCE(t.bucket_override, CASE WHEN t.transfer_pair IS NOT NULL OR upper(t.description) LIKE 'TOTAL DA FATURA ANTERIOR%' THEN 'ignorar' END, ${RULE("bucket")}, (SELECT cm.bucket FROM category_map cm WHERE cm.pluggy_category_id = t.pluggy_category_id), 'dia_a_dia')`;
 
 /** SQL reutilizável: nome da categoria exibido (regra por texto > categoria do banco). */
 export const CATEGORY_SQL = `COALESCE(${RULE("category")}, NULLIF(t.pluggy_category, ''), 'Sem categoria')`;

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
-  ArrowLeftRight, Building2, CreditCard, HandCoins, LayoutDashboard, PiggyBank, Plug, Receipt, Wallet, type LucideIcon,
+  ArrowLeftRight, Building2, CreditCard, HandCoins, LayoutDashboard, PiggyBank, Plane, Plug, Receipt, Wallet, type LucideIcon,
 } from "lucide-react";
 import { isMonth } from "@/lib/month";
 
@@ -12,6 +12,7 @@ const NAV: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/fluxo", label: "Fluxo de caixa", icon: ArrowLeftRight },
   { href: "/cartoes", label: "Cartões", icon: CreditCard },
   { href: "/apartamento", label: "Apartamento", icon: Building2 },
+  { href: "/viagens", label: "Viagens", icon: Plane },
   { href: "/reserva", label: "Reserva", icon: PiggyBank },
   { href: "/renda", label: "Renda", icon: Wallet },
   { href: "/contas", label: "Contas fixas", icon: Receipt },

@@ -230,17 +230,20 @@ Ele é recriado na próxima vez que o app abre.
 
 ## O que dá para fazer no app
 
-- **Visão geral:** com o botão **Mês / Geral** no topo, todos os cards mostram o mês escolhido ou o histórico inteiro. Os cards são saldo previsto, transações, gastos por categoria (com as lojas de cada uma), cartões, recorrências, dívidas, empréstimos e moradia.
-- **Saldo previsto:** salário menos contas fixas, dívidas do mês e gastos do dia a dia.
+- **Visão geral:** com o botão **Mês / Geral** no topo, todos os cards mostram o mês escolhido ou o histórico inteiro. Os cards são gasto até agora, calendário, transações, gastos por categoria (com as lojas de cada uma), cartões, recorrências, dívidas, empréstimos e moradia.
+- **Gasto até agora:** quanto já saiu no mês até hoje, por categoria (onde) e por dia (quando). Clique numa barra, num dia ou num gasto para ver a lista.
+- **Calendário:** feriados nacionais calculados sozinhos, mais férias, folgas e eventos que você marcar. Mostra também o vencimento das contas e faturas e os dias das viagens.
+- **Viagens:** planejamento de cada viagem com orçamento, custos por categoria (transporte, hospedagem, comida...), o que já foi pago, custo por dia e por pessoa.
 - **Empréstimos:** os empréstimos em aberto de todos os bancos, deduzidos do extrato (crédito recebido menos parcelas pagas).
 - **Apartamento:** acompanhamento de imóvel na planta (entrada, taxa de obra, financiamento e entrega).
 - **Reserva:** metas e projetos com aportes e retiradas.
 - **Contas fixas:** contas que se repetem todo mês. Se você preencher o texto que aparece no extrato (ex.: `CLARO`), a conta é marcada como paga sozinha quando a cobrança chega.
 - **Dívidas:** coisas avulsas que você deve, com pagamentos parciais.
-- **Cartões:** fatura aberta, próximo fechamento e vencimento de cada cartão, limite e parcelamentos.
+- **Cartões:** fatura aberta, próximo fechamento e vencimento de cada cartão, limite e parcelamentos. A linha "TOTAL DA FATURA ANTERIOR" que alguns bancos repetem no extrato não conta como gasto.
 - **Fluxo de caixa:** todas as transações, com busca por texto ou valor e filtros por conta, tipo, classificação e período.
 - **Regras:** a varinha ao lado de uma transação cria uma regra do tipo "tudo que tiver *iFood* vira categoria Delivery".
 - **Transferências entre suas contas** (Pix para você mesmo, pagamento de fatura) são detectadas e não contam em dobro.
+- **Atualização automática:** o app confere a Pluggy a cada 5 minutos (e quando você abre uma página) e só baixa as transações quando há dado novo.
 - **Botão do olho** no topo: esconde todos os valores (`R$ ****`), para mostrar o app para alguém.
 - **Tema claro/escuro** e sidebar recolhível.
 

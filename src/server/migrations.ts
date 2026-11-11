@@ -211,7 +211,59 @@ CREATE TABLE debt_payments (
 CREATE INDEX idx_debt_payments_debt ON debt_payments(debt_id);
 `;
 
-const MIGRATIONS: string[] = [V1, V2, V3, V4];
+/** V5: viagens — planejamento com orçamento e todos os custos. */
+const V5 = `
+CREATE TABLE trips (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  destination TEXT,
+  start_date TEXT,
+  end_date TEXT,
+  budget INTEGER,
+  people INTEGER NOT NULL DEFAULT 1,
+  notes TEXT,
+  created_at TEXT NOT NULL
+);
+CREATE TABLE trip_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  trip_id INTEGER NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+  category TEXT NOT NULL,
+  description TEXT NOT NULL,
+  amount INTEGER NOT NULL,
+  date TEXT,
+  paid INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX idx_trip_items_trip ON trip_items(trip_id);
+`;
+
+/** V6: calendário — férias, folgas e eventos marcados à mão (feriados nacionais são calculados). */
+const V6 = `
+CREATE TABLE calendar_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  kind TEXT NOT NULL CHECK (kind IN ('ferias', 'folga', 'feriado', 'evento')),
+  title TEXT,
+  start_date TEXT NOT NULL,
+  end_date TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX idx_calendar_dates ON calendar_events(start_date, end_date);
+`;
+
+/** V7: parcelamento de fatura de cartão feito no banco (a fatura do mês vira a 1ª parcela). */
+const V7 = `
+CREATE TABLE card_plans (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  description TEXT NOT NULL,
+  installment INTEGER NOT NULL,
+  total INTEGER NOT NULL,
+  first_ref TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+`;
+
+const MIGRATIONS: string[] = [V1, V2, V3, V4, V5, V6, V7];
 
 export function migrate(d: DatabaseSync): void {
   d.exec("CREATE TABLE IF NOT EXISTS schema_version (version INTEGER NOT NULL)");
