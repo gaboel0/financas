@@ -1,0 +1,218 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --page: #f5f6f8;
+  --card: #ffffff;
+  --line: #e7e9ee;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --soft: #f1f3f7;
+  --shadow: 0 1px 2px rgb(15 23 42 / 0.04), 0 4px 16px rgb(15 23 42 / 0.04);
+}
+
+.dark {
+  /* tons de preto neutros (sem azul) */
+  --page: #050505;
+  --card: #111111;
+  --line: #242424;
+  --ink: #ededed;
+  --muted: #9a9a9a;
+  --soft: #1a1a1a;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.25);
+}
+
+@theme inline {
+  --color-page: var(--page);
+  --color-card: var(--card);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-soft: var(--soft);
+  --color-primary: #2563eb;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+html {
+  color-scheme: light;
+}
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  min-height: 100vh;
+}
+
+.card-shadow {
+  box-shadow: var(--shadow);
+}
+
+/* cartões de crédito: gradiente escuro "escovado" e laranja */
+.card-dark {
+  background:
+    repeating-linear-gradient(115deg, rgb(255 255 255 / 0.035) 0 2px, transparent 2px 5px),
+    linear-gradient(135deg, #2e2e2e 0%, #141414 55%, #2a2a2a 100%);
+}
+.card-orange {
+  background:
+    radial-gradient(circle at 85% 10%, rgb(255 255 255 / 0.28), transparent 45%),
+    linear-gradient(135deg, #ff8a1f 0%, #ff6a00 60%, #e85a00 100%);
+}
+.card-purple {
+  background:
+    radial-gradient(circle at 85% 10%, rgb(255 255 255 / 0.2), transparent 45%),
+    linear-gradient(135deg, #9b4dff 0%, #7c2cf0 60%, #5b16c4 100%);
+}
+.card-blue {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 60%, #1e40af 100%);
+}
+.card-red {
+  background: linear-gradient(135deg, #f43f5e 0%, #dc2626 60%, #991b1b 100%);
+}
+.card-green {
+  background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
+}
+.card-slate {
+  background: linear-gradient(135deg, #737373 0%, #3a3a3a 100%);
+}
+
+.scroll-thin::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 999px;
+}
+
+input,
+select,
+textarea {
+  color-scheme: inherit;
+}
+
+/* Modo "esconder valores": cada valor vira R$ **** no mesmo lugar (o layout não pula) */
+html[data-privacy="on"] .money {
+  position: relative;
+  visibility: hidden;
+}
+html[data-privacy="on"] .money::after {
+  content: "R$ ****";
+  visibility: visible;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  white-space: nowrap;
+  color: inherit;
+  font-size: inherit;
+  letter-spacing: 0.05em;
+}
+/* números dentro dos gráficos (rótulos, eixo de valores e tooltip) */
+html[data-privacy="on"] .recharts-label-list,
+html[data-privacy="on"] .recharts-tooltip-wrapper,
+html[data-privacy="on"] .recharts-yAxis .recharts-cartesian-axis-tick-value {
+  visibility: hidden;
+}
+
+/* ===== Microinterações ("dá vontade de tocar em tudo") ===== */
+:root {
+  --spring: cubic-bezier(0.34, 1.36, 0.64, 1);
+  --out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* tudo que é clicável afunda um pouco ao tocar */
+:where(button, a, summary, label:has(> input[type="radio"]), [role="checkbox"]):not(:disabled):active {
+  scale: 0.96;
+}
+:where(button, a, summary, label:has(> input[type="radio"]), [role="checkbox"]) {
+  transition-property: color, background-color, border-color, opacity, box-shadow, scale;
+  transition-duration: 160ms;
+  transition-timing-function: var(--out);
+}
+/* cards inteiros clicáveis afundam menos */
+:where(main section a.block, main details > summary):not(:disabled):active {
+  scale: 0.99;
+}
+
+/* Abas segmentadas com pílula que desliza: .seg + --n (nº de abas). Ativa = [data-active] ou radio marcado. */
+.seg {
+  --gap: 0.25rem;
+  --pad: 0.25rem;
+  --i: 0;
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: repeat(var(--n, 2), minmax(0, 1fr));
+  gap: var(--gap);
+  padding: var(--pad);
+  border-radius: 0.75rem;
+  background: var(--soft);
+}
+.seg::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: var(--pad);
+  bottom: var(--pad);
+  left: var(--pad);
+  width: calc((100% - 2 * var(--pad) - (var(--n, 2) - 1) * var(--gap)) / var(--n, 2));
+  border-radius: 0.55rem;
+  background: var(--card);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.1), 0 4px 12px rgb(0 0 0 / 0.08);
+  transform: translateX(calc(var(--i) * (100% + var(--gap))));
+  transition: transform 460ms var(--spring);
+}
+.seg:has(> :nth-child(2):is([data-active], :has(:checked))) { --i: 1; }
+.seg:has(> :nth-child(3):is([data-active], :has(:checked))) { --i: 2; }
+.seg:has(> :nth-child(4):is([data-active], :has(:checked))) { --i: 3; }
+.seg > * {
+  color: var(--muted);
+  border-radius: 0.55rem;
+}
+.seg > *:hover { color: var(--ink); }
+.seg > :is([data-active], :has(:checked)) {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+/* Modal: entra como "sheet" com mola; no celular sobe de baixo */
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes sheet-in { from { opacity: 0; transform: translateY(28px) scale(0.96); } }
+@keyframes sheet-up { from { transform: translateY(100%); } }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+.backdrop-in { animation: fade-in 220ms ease-out both; }
+.sheet-in { animation: sheet-in 460ms var(--spring) both; }
+@media (max-width: 639px) {
+  .sheet-in { animation: sheet-up 420ms var(--out) both; }
+}
+/* itens do formulário entram em cascata */
+.sheet-in form > * { animation: rise 380ms var(--out) both; }
+.sheet-in form > :nth-child(1) { animation-delay: 60ms; }
+.sheet-in form > :nth-child(2) { animation-delay: 95ms; }
+.sheet-in form > :nth-child(3) { animation-delay: 130ms; }
+.sheet-in form > :nth-child(4) { animation-delay: 165ms; }
+.sheet-in form > :nth-child(5) { animation-delay: 200ms; }
+.sheet-in form > :nth-child(6) { animation-delay: 235ms; }
+.sheet-in form > :nth-child(n + 7) { animation-delay: 270ms; }
+.no-anim, .no-anim * { animation: none !important; }
+
+/* check que "pipoca" */
+@keyframes pop {
+  0% { transform: scale(0.3); opacity: 0; }
+  60% { transform: scale(1.18); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.pop { animation: pop 380ms var(--spring) both; }
+
+/* botão que vira "sucesso" */
+.btn-success {
+  background: #10b981 !important;
+  color: #fff !important;
+  opacity: 1 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before { animation: none !important; transition: none !important; }
+}
